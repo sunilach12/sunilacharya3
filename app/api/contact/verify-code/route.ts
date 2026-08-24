@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const resend = new Resend(process.env.RESEND_API_KEY!);
+
     const { email, code } = await req.json();
 
     if (!email || !code) {
@@ -69,9 +71,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Notify YOU (the site owner) that a verified message came in.
-    // If this fails, we still return success since the message IS saved
-    // in the database — you can always check Supabase directly.
+    // Notify YOU (the site owner)
     try {
       await resend.emails.send({
         from: `Portfolio Contact <contact@sunilacharya3.com.np>`,
@@ -84,11 +84,10 @@ export async function POST(req: Request) {
           <p><strong>Name:</strong> ${pending.name}</p>
           <p><strong>Email:</strong> ${pending.email}</p>
           <p><strong>Phone:</strong> ${pending.phone || "Not provided"}</p>
-          ${
-            pending.contact_type === "company"
-              ? `<p><strong>Company:</strong> ${pending.company_name}</p>
+          ${pending.contact_type === "company"
+            ? `<p><strong>Company:</strong> ${pending.company_name}</p>
                  <p><strong>Website:</strong> ${pending.company_website}</p>`
-              : ""
+            : ""
           }
           <hr />
           <p>${pending.message}</p>
@@ -98,9 +97,7 @@ export async function POST(req: Request) {
       console.error("Owner notification email failed (message still saved):", notifyError);
     }
 
-    // Send a friendly confirmation email to the VISITOR.
-    // Also non-blocking — if this fails, the message is still saved
-    // and you've already been notified.
+    // Send a friendly confirmation email to the VISITOR
     try {
       await resend.emails.send({
         from: `Sunil Acharya <contact@sunilacharya3.com.np>`,
